@@ -6,54 +6,88 @@
 
 @layer base {
   :root {
-    --background: 240 6% 4%;
-    --foreground: 240 6% 93%;
+    --background: 220 16% 96%;
+    --foreground: 220 20% 14%;
 
-    --card: 240 5% 7%;
-    --card-foreground: 240 6% 93%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 14%;
 
-    --popover: 240 5% 9%;
-    --popover-foreground: 240 6% 93%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 14%;
 
-    --primary: 145 63% 49%;
-    --primary-foreground: 240 6% 4%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 14%;
-    --secondary-foreground: 240 5% 65%;
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 20% 30%;
 
-    --muted: 240 4% 14%;
-    --muted-foreground: 240 5% 45%;
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 240 6% 93%;
+    --accent: 220 14% 92%;
+    --accent-foreground: 220 20% 14%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 145 63% 49%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 142 71% 45%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    /* Custom tokens */
-    --status-up: 145 63% 49%;
-    --status-down: 0 72% 51%;
+    --status-up: 142 71% 45%;
+    --status-down: 0 84% 60%;
     --status-pending: 38 92% 50%;
-    --ai-accent: 217 91% 60%;
-    --ai-surface: 217 91% 60%;
-    --surface-elevated: 240 5% 10%;
-    --glow-up: 0 0 12px hsl(145 63% 49% / 0.4);
-    --glow-down: 0 0 12px hsl(0 72% 51% / 0.4);
+    --status-maintenance: 217 91% 60%;
 
-    --sidebar-background: 240 6% 4%;
-    --sidebar-foreground: 240 5% 65%;
-    --sidebar-primary: 145 63% 49%;
-    --sidebar-primary-foreground: 240 6% 4%;
-    --sidebar-accent: 240 4% 14%;
-    --sidebar-accent-foreground: 240 6% 93%;
-    --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 145 63% 49%;
+    --ai-accent: 262 83% 58%;
+    --ai-surface: 262 83% 58%;
+
+    --sidebar-bg: 220 20% 14%;
+    --sidebar-fg: 220 10% 80%;
+    --sidebar-hover: 220 18% 20%;
+    --sidebar-active: 220 18% 24%;
+    --sidebar-border: 220 18% 22%;
+
+    --sidebar-background: 220 20% 14%;
+    --sidebar-foreground: 220 10% 80%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 18% 20%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 18% 22%;
+    --sidebar-ring: 142 71% 45%;
+  }
+
+  .dark {
+    --background: 220 18% 10%;
+    --foreground: 220 10% 90%;
+
+    --card: 220 18% 13%;
+    --card-foreground: 220 10% 90%;
+
+    --popover: 220 18% 13%;
+    --popover-foreground: 220 10% 90%;
+
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 18%;
+    --secondary-foreground: 220 10% 70%;
+
+    --muted: 220 16% 18%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 220 16% 22%;
+    --accent-foreground: 220 10% 90%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 16% 20%;
+    --input: 220 16% 20%;
+    --ring: 142 71% 45%;
   }
 }
 
@@ -72,57 +106,154 @@
 }
 
 @layer components {
+  /* Card styles */
   .card-surface {
-    @apply bg-card border border-border rounded-xl backdrop-blur-sm;
+    @apply bg-card border border-border rounded-xl shadow-sm;
   }
 
+  /* Status dots with glow */
+  .status-dot {
+    @apply h-2.5 w-2.5 rounded-full flex-shrink-0;
+  }
   .status-dot-up {
-    @apply h-2 w-2 rounded-full bg-primary;
-    box-shadow: var(--glow-up);
+    @apply status-dot bg-primary;
+    box-shadow: 0 0 8px hsl(var(--status-up) / 0.5);
   }
-
   .status-dot-down {
-    @apply h-2 w-2 rounded-full bg-destructive;
-    box-shadow: var(--glow-down);
+    @apply status-dot bg-destructive;
+    box-shadow: 0 0 8px hsl(var(--status-down) / 0.5);
+    animation: pulse-dot 2s ease-in-out infinite;
   }
-
   .status-dot-pending {
-    @apply h-2 w-2 rounded-full bg-warning;
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    @apply status-dot;
+    background: hsl(var(--status-pending));
+    animation: pulse-dot 1.5s ease-in-out infinite;
   }
 
+  /* AI insight */
   .ai-insight-surface {
     @apply rounded-lg border p-3;
-    background: hsl(var(--ai-surface) / 0.08);
-    border-color: hsl(var(--ai-surface) / 0.2);
+    background: hsl(var(--ai-surface) / 0.06);
+    border-color: hsl(var(--ai-surface) / 0.15);
   }
 
+  /* Heartbeat bars */
   .heartbeat-bar {
-    @apply rounded-full transition-all duration-150;
-    min-width: 3px;
+    @apply rounded-sm transition-all duration-200 cursor-pointer;
+    min-width: 4px;
   }
-
   .heartbeat-bar-up {
-    @apply heartbeat-bar bg-primary/70 hover:bg-primary;
+    @apply heartbeat-bar;
+    background: hsl(var(--status-up) / 0.75);
   }
-
+  .heartbeat-bar-up:hover {
+    background: hsl(var(--status-up));
+    transform: scaleY(1.2);
+  }
   .heartbeat-bar-down {
-    @apply heartbeat-bar bg-destructive/70 hover:bg-destructive;
+    @apply heartbeat-bar;
+    background: hsl(var(--status-down) / 0.75);
   }
-
+  .heartbeat-bar-down:hover {
+    background: hsl(var(--status-down));
+    transform: scaleY(1.2);
+  }
   .heartbeat-bar-pending {
-    @apply heartbeat-bar bg-warning/70;
+    @apply heartbeat-bar;
+    background: hsl(var(--status-pending) / 0.5);
+  }
+  .heartbeat-bar-empty {
+    @apply heartbeat-bar;
+    background: hsl(var(--muted));
   }
 
+  /* Typography helpers */
   .stat-value {
     @apply text-3xl font-bold font-mono tracking-tight;
   }
-
   .stat-label {
     @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
   }
-
   .mono {
     @apply font-mono text-xs;
   }
+
+  /* Sidebar monitor item */
+  .monitor-item {
+    @apply flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 border-l-3 border-transparent;
+  }
+  .monitor-item:hover {
+    background: hsl(var(--sidebar-hover));
+  }
+  .monitor-item.active {
+    background: hsl(var(--sidebar-active));
+    border-left-color: hsl(var(--primary));
+  }
+  .monitor-item.status-up-item .monitor-status-indicator {
+    background: hsl(var(--status-up));
+    box-shadow: 0 0 6px hsl(var(--status-up) / 0.4);
+  }
+  .monitor-item.status-down-item .monitor-status-indicator {
+    background: hsl(var(--status-down));
+    box-shadow: 0 0 6px hsl(var(--status-down) / 0.4);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  .monitor-item.status-pending-item .monitor-status-indicator {
+    background: hsl(var(--status-pending));
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  .monitor-status-indicator {
+    @apply h-3 w-3 rounded-full flex-shrink-0;
+  }
+
+  /* Uptime percentage pill */
+  .uptime-pill {
+    @apply text-xs font-mono font-semibold px-2 py-0.5 rounded-full;
+  }
+  .uptime-excellent {
+    @apply uptime-pill;
+    background: hsl(var(--status-up) / 0.15);
+    color: hsl(var(--status-up));
+  }
+  .uptime-good {
+    @apply uptime-pill;
+    background: hsl(var(--status-pending) / 0.15);
+    color: hsl(var(--status-pending));
+  }
+  .uptime-bad {
+    @apply uptime-pill;
+    background: hsl(var(--status-down) / 0.15);
+    color: hsl(var(--status-down));
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Smooth scrollbar for sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--sidebar-border));
+  border-radius: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Tooltip for heartbeat bars */
+.hb-tooltip {
+  @apply absolute z-50 px-2.5 py-1.5 rounded-lg text-xs font-mono shadow-lg pointer-events-none;
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  transform: translateX(-50%) translateY(-100%);
+  margin-top: -8px;
 }

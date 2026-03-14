@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import type { Monitor } from '@/store/monitorStore';
+import { Activity, ArrowUp, ArrowDown, Clock } from 'lucide-react';
 
 interface QuickStatsProps {
   monitors: Monitor[];
@@ -9,27 +9,27 @@ export const QuickStats = ({ monitors }: QuickStatsProps) => {
   const up = monitors.filter((m) => m.status === 'up').length;
   const down = monitors.filter((m) => m.status === 'down').length;
   const pending = monitors.filter((m) => m.status === 'pending').length;
-  const total = monitors.length;
+  const avgLatency = monitors.filter(m => m.avgLatency > 0).length > 0
+    ? Math.round(monitors.filter(m => m.avgLatency > 0).reduce((sum, m) => sum + m.avgLatency, 0) / monitors.filter(m => m.avgLatency > 0).length)
+    : 0;
 
-  const stats = [
-    { label: 'Total', value: total, color: 'text-foreground' },
-    { label: 'Up', value: up, color: 'text-primary' },
-    { label: 'Down', value: down, color: 'text-destructive' },
-    { label: 'Pending', value: pending, color: 'text-warning' },
-  ];
+  const overallUptime = monitors.filter(m => m.uptime24h > 0).length > 0
+    ? (monitors.filter(m => m.uptime24h > 0).reduce((sum, m) => sum + m.uptime24h, 0) / monitors.filter(m => m.uptime24h > 0).length).toFixed(2)
+    : '0';
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {stats.map((stat) => (
-        <motion.div
-          key={stat.label}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card-surface p-4 text-center"
-        >
-          <p className={`stat-value ${stat.color}`}>{stat.value}</p>
-          <p className="stat-label mt-1">{stat.label}</p>
-        </motion.div>
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {[
+        { icon: Activity, label: 'Total', value: monitors.length, color: 'text-foreground' },
+        { icon: ArrowUp, label: 'Up', value: up, color: 'text-primary' },
+        { icon: ArrowDown, label: 'Down', value: down, color: 'text-destructive' },
+        { icon: Clock, label: 'Avg Latency', value: `${avgLatency}ms`, color: 'text-foreground' },
+        { icon: Activity, label: 'Uptime', value: `${overallUptime}%`, color: 'text-primary' },
+      ].map((stat) => (
+        <div key={stat.label} className="card-surface p-3 text-center">
+          <p className={`text-xl font-bold font-mono ${stat.color}`}>{stat.value}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+        </div>
       ))}
     </div>
   );
