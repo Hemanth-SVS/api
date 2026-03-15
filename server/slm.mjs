@@ -259,21 +259,23 @@ const listAvailableModels = (payload, provider) => {
 const generateText = async (prompt, { format } = {}) => {
   const slmConfig = await getSlmSettings({ includeSecrets: true });
 
-  if (slmConfig.provider === "ollama") {
-    const response = await fetch(buildOllamaUrl(slmConfig.baseUrl, "/api/generate"), {
-      method: "POST",
-      headers: getHeaders(slmConfig),
-      body: JSON.stringify({
-        model: slmConfig.model,
-        prompt,
-        stream: false,
-        ...(format ? { format } : {}),
-        options: {
-          temperature: 0.1,
-        },
-      }),
-      signal: AbortSignal.timeout(slmConfig.timeoutMs),
-    });
+    if (slmConfig.provider === "ollama") {
+      const response = await fetch(buildOllamaUrl(slmConfig.baseUrl, "/api/generate"), {
+        method: "POST",
+        headers: getHeaders(slmConfig),
+        body: JSON.stringify({
+          model: slmConfig.model,
+          prompt,
+          stream: false,
+          ...(format ? { format } : {}),
+          options: {
+            temperature: 0.1,
+            num_ctx: 3072,  // Limit context size to speed up generation
+            num_predict: 350,   // Prevent rambling by capping output tokens
+          },
+        }),
+        signal: AbortSignal.timeout(slmConfig.timeoutMs),
+      });
 
     if (!response.ok) {
       throw new Error(`SLM request failed with status ${response.status}`);
@@ -295,11 +297,12 @@ const generateText = async (prompt, { format } = {}) => {
       body: JSON.stringify({
         model: slmConfig.model,
         temperature: 0.1,
+        max_tokens: 350,
         ...(format === "json" ? { response_format: { type: "json_object" } } : {}),
         messages: [
           {
             role: "system",
-            content: "You are Auto-Ops Sentinel. Stay grounded in the provided evidence and avoid speculation.",
+            content: "You are Auto-Ops Sentinel. Output strict concise JSON. Max 15 words per array item. No markdown formatting outside of strict JSON structure.",
           },
           {
             role: "user",
@@ -397,17 +400,28 @@ export const checkSlmAvailability = async ({ force = false } = {}) => {
 
 const buildMonitorPrompt = ({ monitor, recentChecks, incident, relatedActivity, retrievalMatches }) => `
 You are Auto-Ops Sentinel, a reliability analyst for a production monitoring system.
-Return strict JSON with these keys only:
-facts, probableRootCause, confidence, blastRadius, recommendedChecks, suggestedFixes, reportSummary, citations
+You MUST output EXACTLY one valid JSON object and absolutely nothing else.
+NO markdown code blocks around the JSON. Look at the exact required keys below.
+
+Required JSON Structure:
+{
+  "facts": ["fact 1 (max 15 words)", "fact 2 (max 15 words)"],
+  "probableRootCause": "Brief root cause string",
+  "confidence": 0.85,
+  "blastRadius": "Brief blast radius string",
+  "recommendedChecks": ["check 1", "check 2"],
+  "suggestedFixes": ["fix 1", "fix 2"],
+  "reportSummary": "1 sentence executive summary.",
+  "citations": ["source_id_here"]
+}
 
 Rules:
-- facts must be an array of 2-6 evidence-backed strings
-- citations must be an array of source ids or event ids from the provided retrieval matches when useful
-- confidence must be a number between 0 and 1
-- recommendedChecks must be an array of 2-6 concise strings
-- suggestedFixes must be an array of 2-6 concise strings
-- stay grounded in the supplied checks and retrieval evidence only
-- if the evidence is weak, say that evidence is insufficient instead of guessing
+- \`facts\`: 2-4 strings
+- \`citations\`: array of valid source ids
+- \`confidence\`: number between 0 and 1
+- \`recommendedChecks\`: 2-4 concise strings (max 10 words each)
+- \`suggestedFixes\`: 2-4 concise strings (max 10 words each)
+- Stay grounded in evidence. Be extremely brief. Provide ONLY JSON.
 
 Monitor:
 ${JSON.stringify(
@@ -443,11 +457,12 @@ ${JSON.stringify(retrievalMatches ?? [], null, 2)}
 `;
 
 const buildOpsPrompt = ({ question, dashboardSnapshot, monitorContext, incidentContext, retrievalMatches, timeWindow }) => `
-You are Auto-Ops Sentinel, the operator analyst for a production monitoring system.
-Answer using only the supplied state snapshot and retrieved evidence.
-Be concise, concrete, and action-oriented.
+You are Auto-Ops Sentinel, an operator analyst.
+Answer the user's question using ONLY the supplied state snapshot and retrieved evidence.
+EXTREMELY IMPORTANT: Be extremely concise and output your answer as plain text. Do not ramble. Maximum 2 sentences.
+
 If evidence is weak, say so.
-If the question asks about a time window, answer with the exact timestamps you found.
+If asked about a time window, give exact timestamps.
 
 Dashboard:
 ${JSON.stringify(dashboardSnapshot, null, 2)}

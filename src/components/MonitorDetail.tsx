@@ -84,20 +84,22 @@ export const MonitorDetailView = ({
   const selectedMonitorName = detail?.monitor.name ?? "this monitor";
   const selectedMonitorStatus = detail?.monitor.status ?? "pending";
 
+  const activeMonitorId = detail?.monitor.id;
+
   useEffect(() => {
-    if (!detail) {
+    if (!activeMonitorId) {
       setChatHistory([]);
       return;
     }
 
     setChatHistory([
       {
-        id: `seed-${detail.monitor.id}`,
+        id: `seed-${activeMonitorId}`,
         role: "assistant",
-        content: `Ask what happened, why ${selectedMonitorName} is ${selectedMonitorStatus}, or what the stored incident reports recommend next.`,
+        content: `Ask what happened, why the monitor is reporting issues, or what the stored incident reports recommend next.`,
       },
     ]);
-  }, [detail, selectedMonitorName, selectedMonitorStatus]);
+  }, [activeMonitorId]);
 
   const submitQuestion = async (prompt?: string) => {
     const nextQuestion = String(prompt ?? question).trim();
