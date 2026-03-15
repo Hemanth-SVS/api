@@ -1,73 +1,79 @@
-# Welcome to your Lovable project
+# Auto-Ops Sentinel
 
-## Project info
+Auto-Ops Sentinel is an API health monitoring workspace with a local-SLM incident response loop backed by PostgreSQL:
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+- synthetic API monitor coverage
+- incident cards with root-cause analysis and suggested fixes
+- a natural-language signal analyst backed by a local Ollama-compatible model
+- a lightweight Node backend that stores monitor history, incidents, and raw SLM sessions in PostgreSQL
 
-## How can I edit this code?
+## Run it
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Open two terminals:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev:server
 ```
 
-**Edit a file directly in GitHub**
+```sh
+npm run dev:client
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The frontend runs on `http://localhost:8080` and proxies `/api` calls to the backend on `http://127.0.0.1:8787`.
+The backend now reads `.env` automatically when you start it with `npm run dev:server`.
 
-**Use GitHub Codespaces**
+## PostgreSQL
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+PostgreSQL is now the primary database for:
 
-## What technologies are used for this project?
+- monitors
+- monitor checks and stored response bodies
+- incidents
+- activity events
+- full Signal Analyst runs, including prompt and raw model output
 
-This project is built with:
+Set this value in `.env`:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/auto_ops_sentinel`
 
-## How can I deploy this project?
+Retention defaults to "keep everything". If you want limits, set:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- `CHECK_RETENTION_PER_MONITOR`
+- `ANALYSIS_RETENTION_PER_MONITOR`
+- `ACTIVITY_EVENT_RETENTION`
 
-## Can I connect a custom domain to my Lovable project?
+## Local SLM
 
-Yes, you can!
+The backend expects an Ollama-compatible endpoint by default:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `SLM_BASE_URL=http://127.0.0.1:11434`
+- `SLM_MODEL=llama3.2:3b`
+- `SLM_TIMEOUT_MS=20000`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+If the model is unavailable, the app falls back to a rule-based RCA engine so the dashboard still works.
+If Ollama is already running on `127.0.0.1:11434`, do not start `ollama serve` again.
+
+You can now change the SLM connection in the UI from the `SLM Settings` button:
+
+- base URL
+- model
+- timeout
+
+Those settings are saved in PostgreSQL and used for future analysis runs without editing code.
+
+## Scripts
+
+```sh
+npm run dev:client
+npm run dev:server
+npm run build
+npm run test
+```
+
+## Notes
+
+- `src/pages/Index.tsx` is the active frontend entrypoint.
+- `server/index.mjs` exposes the monitor, incident, RCA, natural-language query, and SLM settings endpoints.
+- `server/store.mjs` owns the PostgreSQL connection, schema bootstrap, and persisted SLM settings.
+- `server/slm.mjs` checks reachability, uses the persisted SLM settings, and stores full per-monitor analysis inputs and outputs.

@@ -1,65 +1,69 @@
-import { useState, useRef } from 'react';
-import type { Heartbeat } from '@/store/monitorStore';
+import { useRef, useState } from "react";
+
+import type { MonitorCheck } from "@/types/monitoring";
 
 interface HeartbeatBarProps {
-  heartbeats: Heartbeat[];
+  heartbeats: MonitorCheck[];
   maxBars?: number;
   height?: number;
 }
 
-export const HeartbeatBar = ({ heartbeats, maxBars = 50, height = 28 }: HeartbeatBarProps) => {
+const heartbeatClass = (status: MonitorCheck["status"] | "empty") => {
+  if (status === "up") {
+    return "bg-emerald-400";
+  }
+
+  if (status === "degraded") {
+    return "bg-amber-400";
+  }
+
+  if (status === "down") {
+    return "bg-rose-500";
+  }
+
+  if (status === "pending") {
+    return "bg-slate-500";
+  }
+
+  return "bg-slate-700";
+};
+
+export const HeartbeatBar = ({ heartbeats, maxBars = 42, height = 32 }: HeartbeatBarProps) => {
   const [tooltip, setTooltip] = useState<{ x: number; text: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const displayBeats = heartbeats.slice(-maxBars);
+  const filled = [...Array(Math.max(0, maxBars - displayBeats.length)).fill(null), ...displayBeats];
 
-  if (displayBeats.length === 0) {
-    return (
-      <div className="flex items-end gap-[2px]" style={{ height }}>
-        {Array.from({ length: maxBars }).map((_, i) => (
-          <div key={i} className="heartbeat-bar-empty flex-1" style={{ height: '100%' }} />
-        ))}
-      </div>
-    );
-  }
+  const handleMouseEnter = (heartbeat: MonitorCheck, event: React.MouseEvent) => {
+    if (!containerRef.current) {
+      return;
+    }
 
-  const handleMouseEnter = (hb: Heartbeat, e: React.MouseEvent) => {
-    if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const time = new Date(hb.timestamp).toLocaleTimeString();
-    const text = `${hb.status.toUpperCase()} · ${hb.latency > 0 ? hb.latency + 'ms' : 'N/A'} · ${time}`;
+    const x = event.clientX - rect.left;
+    const time = new Date(heartbeat.checkedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const text = `${heartbeat.status.toUpperCase()} - ${heartbeat.latencyMs > 0 ? `${heartbeat.latencyMs}ms` : "No latency"} - ${time}`;
     setTooltip({ x, text });
   };
 
   return (
-    <div ref={containerRef} className="relative flex items-end gap-[2px]" style={{ height }}>
-      {displayBeats.map((hb) => (
+    <div ref={containerRef} className="relative flex items-center gap-[8px]" style={{ height }}>
+      {filled.map((heartbeat, index) => (
         <div
-          key={hb.id}
-          className={
-            hb.status === 'up' ? 'heartbeat-bar-up' :
-            hb.status === 'down' ? 'heartbeat-bar-down' :
-            'heartbeat-bar-pending'
-          }
-          style={{
-            flex: 1,
-            height: hb.status === 'up'
-              ? `${Math.max(40, Math.min(100, (hb.latency / 400) * 100))}%`
-              : '100%',
-          }}
-          onMouseEnter={(e) => handleMouseEnter(hb, e)}
+          key={heartbeat?.id ?? `empty-${index}`}
+          className={`flex-1 rounded-full transition-transform duration-150 hover:scale-y-[1.08] ${heartbeatClass(heartbeat?.status ?? "empty")}`}
+          style={{ height: "100%", minWidth: 8 }}
+          onMouseEnter={heartbeat ? (event) => handleMouseEnter(heartbeat, event) : undefined}
           onMouseLeave={() => setTooltip(null)}
         />
       ))}
-      {tooltip && (
-        <div
-          className="hb-tooltip"
-          style={{ left: tooltip.x, top: -4 }}
-        >
+
+      {tooltip ? (
+        <div className="hb-tooltip" style={{ left: tooltip.x, top: -8 }}>
           {tooltip.text}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
